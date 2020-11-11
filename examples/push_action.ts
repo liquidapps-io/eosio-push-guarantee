@@ -12,10 +12,10 @@ const api = new Api({ rpc, signatureProvider, textDecoder: new TextDecoder(), te
     const config = {
         // pushGuarantee: 'none', 
         // readRetries: 0,
-        pushGuarantee: 'in-block', 
-        readRetries: 10,
-        // pushGuarantee: 'irreversible', 
-        // readRetries: 300,
+        // pushGuarantee: 'in-block', 
+        // readRetries: 10,
+        pushGuarantee: 'irreversible', 
+        readRetries: 300,
     }
     const push_guarantee_api = new PushGuarantee(api, config);
     const account = 'dappservices';
