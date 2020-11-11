@@ -1,5 +1,3 @@
-/*
-
 import { PushGuarantee } from "../src/index.js";
 const { Api, JsonRpc, RpcError } = require('eosjs');
 const { JsSignatureProvider } = require('eosjs/dist/eosjs-jssig');      // development only
@@ -36,12 +34,10 @@ const api = new Api({ rpc, signatureProvider, textDecoder: new TextDecoder(), te
             },
         }]
     }, {
-        blocksBehind: 3,
+        // blocksBehind: 3,
         // expireSeconds: 30, // in-block
         expireSeconds: 300, // irreversible
         useLastIrreversible: true // irreversible
     });
     console.dir(result);
 })().catch((e) => { console.log(e); });
-
-*/

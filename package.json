@@ -13,7 +13,11 @@
   ],
   "author": "Natanael Prudhomme",
   "license": "BSD 3-Clause",
-  "devDependencies": {},
+  "devDependencies": {
+    "@types/http-server": "^0.10.1",
+    "eosjs": "^21.0.3",
+    "node-fetch": "^2.6.1"
+  },
   "homepage": "https://liquidapps.io",
   "dependencies": {}
 }
