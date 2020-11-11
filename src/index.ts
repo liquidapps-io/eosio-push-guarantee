@@ -77,7 +77,7 @@ export class PushGuarantee{
         switch(pushOpt){
             case "in-block":
                 return await this.handleGuarantee(pushOpt, trxRes)
-            case "in-lib-block":
+            case "irreversible":
                 return await this.handleGuarantee(pushOpt, trxRes)
             case "none":
                 return true;

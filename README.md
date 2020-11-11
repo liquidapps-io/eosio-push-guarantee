@@ -25,7 +25,7 @@ const api = new Api({ rpc, signatureProvider, textDecoder: new TextDecoder(), te
 (async () => {
     const push_guarantee_api = new PushGuarantee(api, { 
         // push_guarantee: 'in-block', 
-        push_guarantee: 'in-lib-block', 
+        push_guarantee: 'irreversible', 
         // push_guarantee: 'none', 
         readRetries: 300 
     });
@@ -50,8 +50,8 @@ const api = new Api({ rpc, signatureProvider, textDecoder: new TextDecoder(), te
     }, {
         blocksBehind: 3,
         // expireSeconds: 30, // in-block
-        expireSeconds: 300, // in-lib-block
-        useLastIrreversible: true // in-lib-block
+        expireSeconds: 300, // irreversible
+        useLastIrreversible: true // irreversible
     });
     console.dir(result);
 })().catch((e) => { console.log(e); });

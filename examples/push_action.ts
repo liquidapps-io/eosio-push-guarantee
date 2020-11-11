@@ -13,7 +13,7 @@ const api = new Api({ rpc, signatureProvider, textDecoder: new TextDecoder(), te
 (async () => {
     const push_guarantee_api = new PushGuarantee(api, { 
         // push_guarantee: 'in-block', 
-        push_guarantee: 'in-lib-block', 
+        push_guarantee: 'irreversible', 
         // push_guarantee: 'none', 
         readRetries: 300 
     });
