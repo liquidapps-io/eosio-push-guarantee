@@ -1,3 +1,5 @@
+/*
+
 import { PushGuarantee } from "../src/index.js";
 const { Api, JsonRpc, RpcError } = require('eosjs');
 const { JsSignatureProvider } = require('eosjs/dist/eosjs-jssig');      // development only
@@ -46,3 +48,5 @@ const api = new Api({ rpc, signatureProvider, textDecoder: new TextDecoder(), te
     const result = await push_guarantee_api.push_transaction(serializedTrx, config);
     console.dir(result);
 })().catch((e) => { console.log(e); });
+
+*/
