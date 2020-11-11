@@ -1,0 +1,19 @@
+{
+  "name": "eosio-push-guarantee",
+  "version": "1.2.2",
+  "description": "JS library for interacting with DAPP network services.",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "scripts": {
+    "start": "npm run build:live",
+    "build": "tsc"
+  },
+  "files": [
+    "dist"
+  ],
+  "author": "Natanael Prudhomme",
+  "license": "BSD 3-Clause",
+  "devDependencies": {},
+  "homepage": "https://liquidapps.io",
+  "dependencies": {}
+}
