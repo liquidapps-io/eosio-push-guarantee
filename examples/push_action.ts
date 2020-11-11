@@ -9,16 +9,19 @@ const rpc = new JsonRpc('https://kylin-dsp-2.liquidapps.io', { fetch });
 const api = new Api({ rpc, signatureProvider, textDecoder: new TextDecoder(), textEncoder: new TextEncoder() });
 
 (async () => {
-    const push_guarantee_api = new PushGuarantee(api, { 
-        // push_guarantee: 'in-block', 
-        push_guarantee: 'irreversible', 
-        // push_guarantee: 'none', 
-        readRetries: 300 
-    });
+    const config = {
+        // pushGuarantee: 'none', 
+        // readRetries: 0,
+        pushGuarantee: 'in-block', 
+        readRetries: 10,
+        // pushGuarantee: 'irreversible', 
+        // readRetries: 300,
+    }
+    const push_guarantee_api = new PushGuarantee(api, config);
     const account = 'dappservices';
     const actor = 'vacctstst123';
     const action = 'transfer';
-    const result = await push_guarantee_api.transact({
+    const serializedTrx = await api.transact({
         actions: [{
             account,
             name: action,
@@ -33,11 +36,13 @@ const api = new Api({ rpc, signatureProvider, textDecoder: new TextDecoder(), te
                 memo: ''
             },
         }]
-    }, {
+    },  {
         // blocksBehind: 3,
         // expireSeconds: 30, // in-block
         expireSeconds: 300, // irreversible
-        useLastIrreversible: true // irreversible
+        useLastIrreversible: true, // irreversible,
+        broadcast: false 
     });
+    const result = await push_guarantee_api.push_transaction(serializedTrx, config);
     console.dir(result);
 })().catch((e) => { console.log(e); });
