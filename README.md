@@ -1,6 +1,8 @@
 EOSIO Push Guarantee Library
 =====================
 
+Thank you to the dfuse team for the inspiration on this standard.
+
 To setup the library, first install dependencies:
 
 ```bash
