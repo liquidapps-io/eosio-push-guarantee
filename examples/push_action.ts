@@ -1,5 +1,3 @@
-/*
-
 import { PushGuarantee } from "../src/index.js";
 const { Api, JsonRpc, RpcError } = require('eosjs');
 const { JsSignatureProvider } = require('eosjs/dist/eosjs-jssig');      // development only
@@ -12,12 +10,26 @@ const api = new Api({ rpc, signatureProvider, textDecoder: new TextDecoder(), te
 
 (async () => {
     const config = {
-        // pushGuarantee: 'none', 
-        // readRetries: 0,
+        // pushGuarantee: 'none', // push guarantee level for trx
+        // readRetries: 0, // amount of times to try and verify trx before retrying trx
+        // pushRetries: 3, // amount of times to retry trx before failing
+        // backoff: 500, // time in ms between readRetries
+        // backoffExponent: 1.1 // multiplier backoff time for backoff (if 500ms and 1.1 multiplier then 550ms backoff next time, etc)
+
         // pushGuarantee: 'in-block', 
+        // readRetries: 3,
+
+        // pushGuarantee: 'handoffs:1', 
         // readRetries: 10,
+
+        // pushGuarantee: 'handoffs:2', 
+        // readRetries: 20,
+
+        // pushGuarantee: 'handoffs:3', 
+        // readRetries: 30,
+        
         pushGuarantee: 'irreversible', 
-        readRetries: 300,
+        readRetries: 100,
     }
     const push_guarantee_api = new PushGuarantee(api, config);
     const account = 'dappservices';
@@ -39,14 +51,16 @@ const api = new Api({ rpc, signatureProvider, textDecoder: new TextDecoder(), te
             },
         }]
     },  {
-        // blocksBehind: 3,
-        // expireSeconds: 30, // in-block
-        expireSeconds: 300, // irreversible
-        useLastIrreversible: true, // irreversible,
+        // blocksBehind: 3, // in-block
+        expireSeconds: 30, // in-block
+
+        // blocksBehind: 3, // in-handoffs
+        // expireSeconds: 90, // handoffs
+        
+        // expireSeconds: 300, // irreversible
+        // useLastIrreversible: true, // irreversible,
         broadcast: false 
     });
     const result = await push_guarantee_api.push_transaction(serializedTrx, config);
     console.dir(result);
 })().catch((e) => { console.log(e); });
-
-*/
