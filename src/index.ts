@@ -7,15 +7,13 @@ function delay(t, v) {
 export class PushGuarantee{
 
     pushOptions: any;
-    api: any;
     rpc: any;
     status: any;
     producerHandoffs: any = [];
         
-    constructor(api, pushOptions){
+    constructor(rpc, pushOptions){
         this.pushOptions = pushOptions;
-        this.api = api;
-        this.rpc = api.rpc;
+        this.rpc = rpc;
     }
 
     public push_transaction(serializedTrx, trxOptions){
