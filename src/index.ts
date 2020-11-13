@@ -8,7 +8,7 @@ export class PushGuarantee{
 
     pushOptions: any;
     rpc: any;
-    status: number;
+    status: number = 0;
     producerHandoffs: string[] = [];
         
     constructor(rpc, pushOptions){
@@ -17,6 +17,7 @@ export class PushGuarantee{
     }
 
     public push_transaction(serializedTrx, trxOptions){
+        if(!serializedTrx.length) throw new Error('Transaction field is empty, must pass serialized transaction')
         const varPushRetries = trxOptions ? trxOptions.pushRetries : '';
         const variablePushRetries = this.pushOptions ? this.pushOptions.pushRetries : '';
         const pushRetries = varPushRetries || variablePushRetries || 3;
@@ -59,7 +60,7 @@ export class PushGuarantee{
         for(const el of trxs) {
             if(el.trx.id == trxRes.transaction_id) {
                 // if (process.env.VERBOSE_LOGS) console.log(`found ${trxRes.transaction_id}`)
-                this.status = pushOpt === 'in-block' ? 2 : 1
+                this.status = (pushOpt === 'in-block' ? 2 : 1)
                 return this.status
             }
         }
