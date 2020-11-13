@@ -9,7 +9,7 @@ export class PushGuarantee{
     pushOptions: any;
     rpc: any;
     status: any;
-    producerHandoffs: any = [];
+    producerHandoffs: any[] = [];
         
     constructor(rpc, pushOptions){
         this.pushOptions = pushOptions;
