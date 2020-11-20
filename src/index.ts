@@ -11,7 +11,7 @@ export class PushGuarantee{
     fetch: any;
     status: number = 0;
     producerHandoffs: string[] = [];
-    returnMessage:any
+    fetchResponse:any
     RpcError:any
         
     constructor(rpc, RpcError, pushOptions, fetch){
@@ -35,14 +35,12 @@ export class PushGuarantee{
         let backoff = trxOptions.backoff || this.pushOptions.backoff || 500;
         let prevStatus = 0;
         if(!pushRetries) throw new Error('too many push retries');
-        this.returnMessage = await this.fetch(this.rpc.endpoint + '/v1/chain/send_transaction', {
+        this.fetchResponse = await this.fetch(this.rpc.endpoint + '/v1/chain/send_transaction', {
             body: JSON.stringify(serializedTrx),
-            method: 'POST'
+            method: 'POST',
+            highWaterMark: 1024 * 1024
         });
-        trxRes = await this.returnMessage.json();
-        if (trxRes.code === 500) {
-            throw this.returnMessage
-        }
+        trxRes = await this.fetchResponse.clone().json();
         while(await this.checkIfFinal(trxRes, trxOptions) !== 2){
             if (process.env.VERBOSE_LOGS) console.log(`backoff: ${backoff} | readRetries ${readRetries} | pushRetries: ${pushRetries} | status: ${this.status} | producerHandoffs: ${this.producerHandoffs}`)
             await delay(backoff, undefined); 
@@ -60,7 +58,7 @@ export class PushGuarantee{
             }
             prevStatus = this.status;
         }
-        return this.returnMessage
+        return this.fetchResponse;
     }
 
     private handleInBlock = async (trxs, trxRes, pushOpt) => {

@@ -73,7 +73,7 @@ const { arrayToHex } = require("eosjs/dist/eosjs-serialize");
         packed_context_free_data: serializedTrx.serializedContextFreeData ? arrayToHex(serializedTrx.serializedContextFreeData) : null
     }
     const result = await push_guarantee_rpc.push_transaction(serializedTrx, config);
-    console.dir(result);
+    console.log(await result.json());
 })().catch((e) => { console.log(e); });
 
 // */
