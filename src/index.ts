@@ -8,34 +8,53 @@ export class PushGuarantee{
 
     pushOptions: any;
     rpc: any;
+    fetch: any;
     status: number = 0;
     producerHandoffs: string[] = [];
+    returnMessage:any
         
-    constructor(rpc, pushOptions){
+    constructor(rpc, pushOptions, fetch){
         this.pushOptions = pushOptions;
         this.rpc = rpc;
+        this.fetch = fetch
     }
 
-    public push_transaction(serializedTrx, trxOptions){
+    public async push_transaction(serializedTrx, trxOptions){
         if(!serializedTrx) throw new Error(JSON.stringify(serializedTrx))
         if(!serializedTrx) throw new Error('Transaction field is empty, must pass serialized transaction')
         const varPushRetries = trxOptions ? trxOptions.pushRetries : '';
         const variablePushRetries = this.pushOptions ? this.pushOptions.pushRetries : '';
         const pushRetries = varPushRetries || variablePushRetries || 3;
-        return this._push_transaction(serializedTrx, trxOptions, pushRetries);
+        return await this._push_transaction(serializedTrx, trxOptions, pushRetries);
     }
 
     protected async _push_transaction(serializedTrx, trxOptions, pushRetries){
+        let trxRes
         try {
             if(!pushRetries) throw new Error('too many push retries')
-            const trxRes = await this.rpc.push_transaction(serializedTrx);
+            // await delay(5000, undefined); 
+            // return await this.rpc.push_transaction(serializedTrx, trxOptions);
+            // const trxRes = await this.rpc.push_transaction(serializedTrx, trxOptions);
+            // const trxRes = await this.rpc.pushSignedTransaction(serializedTrx, trxOptions);
+            trxRes = await this.fetch(this.rpc.endpoint + '/v1/chain/send_transaction', {
+                body: JSON.stringify(serializedTrx),
+                method: 'POST'
+            });
+            this.returnMessage = trxRes
+            // console.log(trxRes)
+            // console.log(typeof(trxRes))
+            trxRes = await trxRes.json();
+            // console.log('completed trx')
+            // console.log(trxRes)
+            // console.log(trxRes)
+            // console.log(trxRes.error.details)
             let readRetries = trxOptions.readRetries || this.pushOptions.readRetries || 10;
             let backoff = trxOptions.backoff || this.pushOptions.backoff || 500;
             let prevStatus = 0;
             while(await this.checkIfFinal(trxRes, trxOptions) !== 2){
                 if (process.env.VERBOSE_LOGS) console.log(`backoff: ${backoff} | readRetries ${readRetries} | pushRetries: ${pushRetries} | status: ${this.status} | producerHandoffs: ${this.producerHandoffs}`)
                 await delay(backoff, undefined); 
-                backoff *= trxOptions.backoffExponent || this.pushOptions.backoffExponent || 1.1;    
+                backoff *= trxOptions.backoffExponent || this.pushOptions.backoffExponent || 1.5;    
                 const microForkDetection = (prevStatus === 1 && this.status === 0); // if trx was found and is now lost, retry
                 if(!readRetries-- || microForkDetection) {
                     if (process.env.VERBOSE_LOGS && microForkDetection) {
@@ -43,15 +62,22 @@ export class PushGuarantee{
                     } else if(process.env.VERBOSE_LOGS) {
                         console.log(`readRetries exceeded, retrying trx`);
                     }
-                    return this._push_transaction(serializedTrx, trxOptions, pushRetries-1); 
+                    return await this._push_transaction(serializedTrx, trxOptions, pushRetries-1); 
                 }
                 prevStatus = this.status;
             }
-            return trxRes;
+            return this.returnMessage
+            // return trxRes;
         } catch(e) {
             if(JSON.stringify(e).includes(`duplicate transaction`)) {
                 if (process.env.VERBOSE_LOGS) console.log(`duplicate transaction`)
+            } else if(JSON.stringify(e).includes(`Could not find block`)) { 
+                if (process.env.VERBOSE_LOGS) console.log(`Could not find block`)
+            } else if(JSON.stringify(e).includes(`Cannot read property`)) { 
+                if (process.env.VERBOSE_LOGS) console.log(`gotcha bish`)
             } else {
+                if (process.env.VERBOSE_LOGS) console.log(`missed ya bish`)
+                if (process.env.VERBOSE_LOGS) console.log(trxRes)
                 throw new Error(e)
             }
         }
@@ -84,10 +110,33 @@ export class PushGuarantee{
     }
 
     private handleGuarantee = async (pushOpt, trxRes, handoffs = 0) => {
-        try { 
+        // try { 
             if (process.env.VERBOSE_LOGS) console.log(pushOpt)
-            const blockDetails = await this.rpc.get_block(trxRes.processed.block_num);
-            if (process.env.VERBOSE_LOGS) console.log(`trx block: ${trxRes.processed.block_num}`)
+            // if(!trxRes.processed.block_num) if (process.env.VERBOSE_LOGS) return new Error(trxRes)
+            let blockDetails;
+                // try {
+                    while(!blockDetails) {
+                        try {
+                            await delay(100, undefined); 
+                            blockDetails = await this.rpc.get_block(trxRes.processed.block_num);
+                            console.log('blockDetails')
+                            console.log(blockDetails)
+                        } catch(e) {
+                            if(process.env.VERBOSE_LOGS) console.log(`block ${trxRes.processed.block_num} not found, retrying`)
+                            if(process.env.VERBOSE_LOGS) console.log(trxRes)
+                            if(process.env.VERBOSE_LOGS) console.log(e)
+                        }
+                    }
+                // } catch(e) {
+                //     console.log('caught error')
+                //     if(JSON.stringify(e).includes(`Could not find block`)) {
+                //         console.log('zinger')
+                //         if (process.env.VERBOSE_LOGS) console.log(e)
+                //     } else {
+                //         throw new Error(e)
+                //     }
+                // }
+            blockDetails = await this.rpc.get_block(trxRes.processed.block_num);
             const res = await this.handleInBlock(blockDetails.transactions, trxRes, pushOpt);
             if(res && pushOpt === "in-block")  {
                 return res;
@@ -99,13 +148,13 @@ export class PushGuarantee{
             } else if(res && pushOpt.includes('handoffs')) {
                 return await this.handleHandoffs(handoffs);
             }
-        } catch (e) { 
-            if(JSON.stringify(e).includes(`Could not find block`)) {
-                if (process.env.VERBOSE_LOGS) console.log(`Could not find block`)
-            } else {
-                throw new Error(e)
-            }
-        }
+        // } catch (e) { 
+        //     if(JSON.stringify(e).includes(`Could not find block`)) {
+        //         if (process.env.VERBOSE_LOGS) console.log(`Could not find block`)
+        //     } else {
+        //         throw new Error(e)
+        //     }
+        // }
         this.status = 0;
         return 0;
     }
