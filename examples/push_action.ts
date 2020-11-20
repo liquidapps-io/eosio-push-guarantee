@@ -35,7 +35,7 @@ const { arrayToHex } = require("eosjs/dist/eosjs-serialize");
         // readRetries: 100,
     }
     // api.rpc = rpc;
-    const push_guarantee_rpc = new PushGuarantee(rpc, config, fetch);
+    const push_guarantee_rpc = new PushGuarantee(rpc, RpcError, config, fetch);
     const account = 'dappservices';
     const actor = 'vacctstst123';
     const action = 'transfer';
@@ -66,14 +66,12 @@ const { arrayToHex } = require("eosjs/dist/eosjs-serialize");
 
         broadcast: false 
     });
-    console.log(serializedTrx)
     serializedTrx = {
         signatures: serializedTrx.signatures,
         compression: serializedTrx.compression || 0,
         packed_trx: arrayToHex(serializedTrx.serializedTransaction),
         packed_context_free_data: serializedTrx.serializedContextFreeData ? arrayToHex(serializedTrx.serializedContextFreeData) : null
     }
-    console.log(serializedTrx)
     const result = await push_guarantee_rpc.push_transaction(serializedTrx, config);
     console.dir(result);
 })().catch((e) => { console.log(e); });
