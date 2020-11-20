@@ -34,54 +34,33 @@ export class PushGuarantee{
         let readRetries = trxOptions.readRetries || this.pushOptions.readRetries || 10;
         let backoff = trxOptions.backoff || this.pushOptions.backoff || 500;
         let prevStatus = 0;
-        // try {
-            if(!pushRetries) throw new Error('too many push retries');
-            this.returnMessage = await this.fetch(this.rpc.endpoint + '/v1/chain/send_transaction', {
-                body: JSON.stringify(serializedTrx),
-                method: 'POST'
-            });
-            trxRes = await this.returnMessage.json();
-            if (trxRes.code === 500) {
-                throw this.returnMessage
-            }
-            // if (trxRes && trxRes.code == 500 && trxRes.error.name == 'set_exact_code') {
-            //     if (process.env.VERBOSE_LOGS) console.log(`contract already running this version of code`)
-            //     // return this.returnMessage;
-            //     // return trxRes;
-            //     throw trxRes
-            // } else if (trxRes && trxRes.code == 500 && trxRes.error.name == 'account_name_exists_exception') {
-            //     if (process.env.VERBOSE_LOGS) console.log(`account name already exists`)
-            //     throw trxRes
-            // }
-            while(await this.checkIfFinal(trxRes, trxOptions) !== 2){
-                if (process.env.VERBOSE_LOGS) console.log(`backoff: ${backoff} | readRetries ${readRetries} | pushRetries: ${pushRetries} | status: ${this.status} | producerHandoffs: ${this.producerHandoffs}`)
-                await delay(backoff, undefined); 
-                backoff *= trxOptions.backoffExponent || this.pushOptions.backoffExponent || 1.5;    
-                const microForkDetection = (prevStatus === 1 && this.status === 0); // if trx was found and is now lost, retry
-                if(!readRetries-- || microForkDetection) {
-                    if (process.env.VERBOSE_LOGS && microForkDetection) {
-                        console.log(`microfork detected, retrying trx`);
-                    } else if(process.env.VERBOSE_LOGS) {
-                        console.log(`readRetries exceeded, retrying trx`);
-                    } else {
-                        console.log(`retrying trx`);
-                    }
-                    return await this._push_transaction(serializedTrx, trxOptions, pushRetries-1); 
+        if(!pushRetries) throw new Error('too many push retries');
+        this.returnMessage = await this.fetch(this.rpc.endpoint + '/v1/chain/send_transaction', {
+            body: JSON.stringify(serializedTrx),
+            method: 'POST'
+        });
+        trxRes = await this.returnMessage.json();
+        if (trxRes.code === 500) {
+            throw this.returnMessage
+        }
+        while(await this.checkIfFinal(trxRes, trxOptions) !== 2){
+            if (process.env.VERBOSE_LOGS) console.log(`backoff: ${backoff} | readRetries ${readRetries} | pushRetries: ${pushRetries} | status: ${this.status} | producerHandoffs: ${this.producerHandoffs}`)
+            await delay(backoff, undefined); 
+            backoff *= trxOptions.backoffExponent || this.pushOptions.backoffExponent || 1.5;    
+            const microForkDetection = (prevStatus === 1 && this.status === 0); // if trx was found and is now lost, retry
+            if(!readRetries-- || microForkDetection) {
+                if (process.env.VERBOSE_LOGS && microForkDetection) {
+                    console.log(`microfork detected, retrying trx`);
+                } else if(process.env.VERBOSE_LOGS) {
+                    console.log(`readRetries exceeded, retrying trx`);
+                } else {
+                    console.log(`retrying trx`);
                 }
-                prevStatus = this.status;
+                return await this._push_transaction(serializedTrx, trxOptions, pushRetries-1); 
             }
-            return this.returnMessage
-        // } catch(e) {
-        //     // if(JSON.stringify(e).includes(`duplicate transaction`)) {
-        //     //     if (process.env.VERBOSE_LOGS) console.log(`duplicate transaction`)
-        //     // } else if(JSON.stringify(e).includes(`Could not find block`)) { 
-        //     //     if (process.env.VERBOSE_LOGS) console.log(`Could not find block`)
-        //     // } else {
-        //     //     console.log(`throwing e`)
-        //     //     console.log(e);
-        //         throw new this.RpcError(e)
-        //     // }
-        // }
+            prevStatus = this.status;
+        }
+        return this.returnMessage
     }
 
     private handleInBlock = async (trxs, trxRes, pushOpt) => {
@@ -112,7 +91,6 @@ export class PushGuarantee{
 
     private handleGuarantee = async (pushOpt, trxRes, handoffs = 0) => {
         if (process.env.VERBOSE_LOGS) console.log(pushOpt)
-        // if(!trxRes.processed.block_num) if (process.env.VERBOSE_LOGS) return new Error(trxRes)
         let blockDetails;
         while(true) {
             try {
