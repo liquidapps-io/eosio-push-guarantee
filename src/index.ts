@@ -36,8 +36,7 @@ export class PushGuarantee{
         if(!pushRetries) throw new Error('too many push retries');
         fetchResponse = await this.fetch(this.rpc.endpoint + '/v1/chain/send_transaction', {
             body: JSON.stringify(serializedTrx),
-            method: 'POST',
-            highWaterMark: 1024 * 1024
+            method: 'POST'
         });
         execBlock = await fetchResponse.clone().json();
         while(await this.checkIfFinal(execBlock, trxOptions) !== 2){
