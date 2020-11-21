@@ -11,7 +11,6 @@ export class PushGuarantee{
     fetch: any;
     status: number = 0;
     producerHandoffs: string[] = [];
-    fetchResponse:any
     RpcError:any
         
     constructor(rpc, RpcError, pushOptions, fetch){
@@ -30,18 +29,18 @@ export class PushGuarantee{
     }
 
     protected async _push_transaction(serializedTrx, trxOptions, pushRetries){
-        let trxRes
+        let execBlock, fetchResponse
         let readRetries = trxOptions.readRetries || this.pushOptions.readRetries || 10;
         let backoff = trxOptions.backoff || this.pushOptions.backoff || 500;
         let prevStatus = 0;
         if(!pushRetries) throw new Error('too many push retries');
-        this.fetchResponse = await this.fetch(this.rpc.endpoint + '/v1/chain/send_transaction', {
+        fetchResponse = await this.fetch(this.rpc.endpoint + '/v1/chain/send_transaction', {
             body: JSON.stringify(serializedTrx),
             method: 'POST',
             highWaterMark: 1024 * 1024
         });
-        trxRes = await this.fetchResponse.clone().json();
-        while(await this.checkIfFinal(trxRes, trxOptions) !== 2){
+        execBlock = await fetchResponse.clone().json();
+        while(await this.checkIfFinal(execBlock, trxOptions) !== 2){
             if (process.env.VERBOSE_LOGS) console.log(`backoff: ${backoff} | readRetries ${readRetries} | pushRetries: ${pushRetries} | status: ${this.status} | producerHandoffs: ${this.producerHandoffs}`)
             await delay(backoff, undefined); 
             backoff *= trxOptions.backoffExponent || this.pushOptions.backoffExponent || 1.5;    
@@ -58,19 +57,19 @@ export class PushGuarantee{
             }
             prevStatus = this.status;
         }
-        return this.fetchResponse;
+        return fetchResponse;
     }
 
-    private handleInBlock = async (trxs, trxRes, pushOpt) => {
+    private handleInBlock = async (trxs, execBlock, pushOpt) => {
         for(const el of trxs) {
-            if(el.trx.id == trxRes.transaction_id) {
-                if (process.env.VERBOSE_LOGS) console.log(`found ${trxRes.transaction_id}`)
+            if(el.trx.id == execBlock.transaction_id) {
+                if (process.env.VERBOSE_LOGS) console.log(`found ${execBlock.transaction_id}`)
                 this.status = (pushOpt === 'in-block' ? 2 : 1)
                 return this.status
             }
         }
         if (process.env.VERBOSE_LOGS) console.log(`trx not found in block, checking next block`)
-        trxRes.processed.block_num++; // handle edge case trx is placed in next block
+        execBlock.processed.block_num++; // handle edge case trx is placed in next block
         this.status = 0;
         return 0;
     }
@@ -87,25 +86,25 @@ export class PushGuarantee{
         return this.status
     }
 
-    private handleGuarantee = async (pushOpt, trxRes, handoffs = 0) => {
+    private handleGuarantee = async (pushOpt, execBlock, handoffs = 0) => {
         if (process.env.VERBOSE_LOGS) console.log(pushOpt)
         let blockDetails;
         while(true) {
             try {
                 await delay(100, undefined); 
-                blockDetails = await this.rpc.get_block(trxRes.processed.block_num);
+                blockDetails = await this.rpc.get_block(execBlock.processed.block_num);
                 if(blockDetails.transactions) break;
             } catch(e) {
-                if(process.env.VERBOSE_LOGS) console.log(`block ${trxRes.processed.block_num} not found, retrying`)
+                if(process.env.VERBOSE_LOGS) console.log(`block ${execBlock.processed.block_num} not found, retrying`)
             }
         }
-        const res = await this.handleInBlock(blockDetails.transactions, trxRes, pushOpt);
+        const res = await this.handleInBlock(blockDetails.transactions, execBlock, pushOpt);
         if(res && pushOpt === "in-block") {
             return res;
         } else if(res && pushOpt === "irreversible") {
             const getInfo = await this.rpc.get_info();
-            if (process.env.VERBOSE_LOGS) console.log(`LIB block: ${getInfo.last_irreversible_block_num} | Blocks behind LIB: ${trxRes.processed.block_num -getInfo.last_irreversible_block_num}`)
-            this.status = getInfo.last_irreversible_block_num > trxRes.processed.block_num ? 2 : 1;
+            if (process.env.VERBOSE_LOGS) console.log(`LIB block: ${getInfo.last_irreversible_block_num} | Blocks behind LIB: ${execBlock.processed.block_num -getInfo.last_irreversible_block_num}`)
+            this.status = getInfo.last_irreversible_block_num > execBlock.processed.block_num ? 2 : 1;
             return this.status
         } else if(res && pushOpt.includes('handoffs')) {
             return await this.handleHandoffs(handoffs);
@@ -114,19 +113,19 @@ export class PushGuarantee{
         return 0;
     }
 
-    private async checkIfFinal(trxRes, trxOptions){
+    private async checkIfFinal(execBlock, trxOptions){
         const pushOpt = trxOptions.pushGuarantee || this.pushOptions.pushGuarantee || "in-block";
         switch(pushOpt){
             case "in-block":
-                return await this.handleGuarantee(pushOpt, trxRes)
+                return await this.handleGuarantee(pushOpt, execBlock)
             case "handoffs:1":
-                return await this.handleGuarantee(pushOpt, trxRes, 1)
+                return await this.handleGuarantee(pushOpt, execBlock, 1)
             case "handoffs:2":
-                return await this.handleGuarantee(pushOpt, trxRes, 2)
+                return await this.handleGuarantee(pushOpt, execBlock, 2)
             case "handoffs:3":
-                return await this.handleGuarantee(pushOpt, trxRes, 3)
+                return await this.handleGuarantee(pushOpt, execBlock, 3)
             case "irreversible":
-                return await this.handleGuarantee(pushOpt, trxRes)
+                return await this.handleGuarantee(pushOpt, execBlock)
             case "none":
                 this.status = 2
                 return 2;
