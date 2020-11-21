@@ -29,16 +29,15 @@ export class PushGuarantee{
     }
 
     protected async _push_transaction(serializedTrx, trxOptions, pushRetries){
-        let execBlock, fetchResponse
         let readRetries = trxOptions.readRetries || this.pushOptions.readRetries || 10;
         let backoff = trxOptions.backoff || this.pushOptions.backoff || 500;
         let prevStatus = 0;
         if(!pushRetries) throw new Error('too many push retries');
-        fetchResponse = await this.fetch(this.rpc.endpoint + '/v1/chain/send_transaction', {
+        let fetchResponse = await this.fetch(this.rpc.endpoint + '/v1/chain/send_transaction', {
             body: JSON.stringify(serializedTrx),
             method: 'POST'
         });
-        execBlock = await fetchResponse.clone().json();
+        let execBlock = await fetchResponse.clone().json();
         while(await this.checkIfFinal(execBlock, trxOptions) !== 2){
             if (process.env.VERBOSE_LOGS) console.log(`backoff: ${backoff} | readRetries ${readRetries} | pushRetries: ${pushRetries} | status: ${this.status} | producerHandoffs: ${this.producerHandoffs}`)
             await delay(backoff, undefined); 
