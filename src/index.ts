@@ -45,6 +45,7 @@ export class PushGuarantee{
             body: JSON.stringify(packedTrx),
             method: 'POST'
         });
+        if(fetchResponse.status !== 202) return fetchResponse;
         while(await this.checkIfFinal(execBlock, trxOptions) !== 2){
             if (process.env.VERBOSE_LOGS) console.log(`backoff: ${backoff} | readRetries ${readRetries} | pushRetries: ${pushRetries} | status: ${this.status} | producerHandoffs: ${this.producerHandoffs}`)
             await delay(backoff, undefined); 
