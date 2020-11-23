@@ -47,18 +47,18 @@ export class PushGuarantee{
         });
         if(fetchResponse.status !== 202) return fetchResponse;
         while(await this.checkIfFinal(execBlock, trxOptions) !== 2){
-            if (process.env.VERBOSE_LOGS) console.log(`backoff: ${backoff} | readRetries ${readRetries} | pushRetries: ${pushRetries} | status: ${this.status} | producerHandoffs: ${this.producerHandoffs}`)
+            console.log(`backoff: ${backoff} | readRetries ${readRetries} | pushRetries: ${pushRetries} | status: ${this.status} | producerHandoffs: ${this.producerHandoffs}`)
             await delay(backoff, undefined); 
             backoff *= trxOptions.backoffExponent || this.pushOptions.backoffExponent || 1.5;    
             const microForkDetection = (prevStatus === 1 && this.status === 0); // if trx was found and is now lost, retry
             if(!readRetries-- || microForkDetection) {
-                if (process.env.VERBOSE_LOGS && microForkDetection) {
-                    console.log(`microfork detected, retrying trx`);
-                } else if(process.env.VERBOSE_LOGS) {
-                    console.log(`readRetries exceeded, retrying trx`);
-                } else {
+                // if (process.env.VERBOSE_LOGS && microForkDetection) {
+                //     console.log(`microfork detected, retrying trx`);
+                // } else if(process.env.VERBOSE_LOGS) {
+                //     console.log(`readRetries exceeded, retrying trx`);
+                // } else {
                     console.log(`retrying trx`);
-                }
+                // }
                 return await this._push_transaction(packedTrx, trxOptions, pushRetries-1); 
             }
             prevStatus = this.status;
@@ -69,12 +69,12 @@ export class PushGuarantee{
     private handleInBlock = async (trxs, execBlock, pushOpt) => {
         for(const el of trxs) {
             if(el.trx.id == execBlock.transaction_id) {
-                if (process.env.VERBOSE_LOGS) console.log(`found ${execBlock.transaction_id}`)
+                console.log(`found ${execBlock.transaction_id}`)
                 this.status = (pushOpt === 'in-block' ? 2 : 1)
                 return this.status
             }
         }
-        if (process.env.VERBOSE_LOGS) console.log(`trx not found in block, checking next block`)
+        console.log(`trx not found in block, checking next block`)
         execBlock.head_block_num++; // handle edge case trx is placed in next block
         this.status = 0;
         return 0;
@@ -86,14 +86,14 @@ export class PushGuarantee{
         if(this.producerHandoffs.indexOf(headBlockProducer) === -1) {
             this.producerHandoffs.push(headBlockProducer)
         } else {
-            if(process.env.VERBOSE_LOGS) console.log(`producer ${headBlockProducer} already in array`)
+            console.log(`producer ${headBlockProducer} already in array`)
         }
         this.status = this.producerHandoffs.length - 1 >= handoffs ? 2 : 1;
         return this.status
     }
 
     private handleGuarantee = async (pushOpt, execBlock, handoffs = 0) => {
-        if (process.env.VERBOSE_LOGS) console.log(pushOpt)
+        console.log(pushOpt)
         let blockDetails;
         while(true) {
             try {
@@ -101,7 +101,7 @@ export class PushGuarantee{
                 blockDetails = await this.rpc.get_block(execBlock.head_block_num);
                 if(blockDetails.transactions) break;
             } catch(e) {
-                if(process.env.VERBOSE_LOGS) console.log(`block ${execBlock.head_block_num} not found, retrying`)
+                console.log(`block ${execBlock.head_block_num} not found, retrying`)
             }
         }
         const res = await this.handleInBlock(blockDetails.transactions, execBlock, pushOpt);
@@ -109,7 +109,7 @@ export class PushGuarantee{
             return res;
         } else if(res && pushOpt === "irreversible") {
             const getInfo = await this.rpc.get_info();
-            if (process.env.VERBOSE_LOGS) console.log(`LIB block: ${getInfo.last_irreversible_block_num} | Blocks behind LIB: ${execBlock.head_block_num -getInfo.last_irreversible_block_num}`)
+            console.log(`LIB block: ${getInfo.last_irreversible_block_num} | Blocks behind LIB: ${execBlock.head_block_num -getInfo.last_irreversible_block_num}`)
             this.status = getInfo.last_irreversible_block_num > execBlock.head_block_num ? 2 : 1;
             return this.status
         } else if(res && pushOpt.includes('handoffs')) {
