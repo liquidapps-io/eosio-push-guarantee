@@ -21,6 +21,7 @@ const defaultPrivateKey = "5JMUyaQ4qw6Zt816B1kWJjgRA5cdEE6PhCb2BW45rU8GBEDa1RC";
 const signatureProvider = new JsSignatureProvider([defaultPrivateKey]);
 const rpc = new JsonRpc('https://kylin-dsp-2.liquidapps.io', { fetch });
 const api = new Api({ rpc, signatureProvider, textDecoder: new TextDecoder(), textEncoder: new TextEncoder() });
+const { arrayToHex } = require("eosjs/dist/eosjs-serialize");
 
 (async () => {
     const config = {
@@ -42,14 +43,15 @@ const api = new Api({ rpc, signatureProvider, textDecoder: new TextDecoder(), te
         // pushGuarantee: 'handoffs:3', 
         // readRetries: 30,
         
-        pushGuarantee: 'irreversible', 
-        readRetries: 100,
+        // pushGuarantee: 'irreversible', 
+        // readRetries: 100,
     }
-    const push_guarantee_rpc = new PushGuarantee(rpc, config);
+    // api.rpc = rpc;
+    const push_guarantee_rpc = new PushGuarantee(rpc, RpcError, config, fetch);
     const account = 'dappservices';
     const actor = 'vacctstst123';
     const action = 'transfer';
-    const serializedTrx = await api.transact({
+    let serializedTrx = await api.transact({
         actions: [{
             account,
             name: action,
@@ -73,10 +75,16 @@ const api = new Api({ rpc, signatureProvider, textDecoder: new TextDecoder(), te
         
         // expireSeconds: 300, // irreversible
         // useLastIrreversible: true, // irreversible,
-        
+
         broadcast: false 
     });
+    serializedTrx = {
+        signatures: serializedTrx.signatures,
+        compression: serializedTrx.compression || 0,
+        packed_trx: arrayToHex(serializedTrx.serializedTransaction),
+        packed_context_free_data: serializedTrx.serializedContextFreeData ? arrayToHex(serializedTrx.serializedContextFreeData) : null
+    }
     const result = await push_guarantee_rpc.push_transaction(serializedTrx, config);
-    console.dir(result);
+    console.log(await result.json());
 })().catch((e) => { console.log(e); });
 ```
