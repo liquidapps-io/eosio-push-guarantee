@@ -1,9 +1,15 @@
-EOSIO Push Guarantee Library
+EOSIO Push Guarantee Library | https://www.npmjs.com/package/eosio-push-guarantee
 =====================
 
 Thank you to the dfuse team for the inspiration on this standard.
 
-To setup the library, first install dependencies:
+To use the library:
+
+```bash
+npm install eosio-push-guarantee
+```
+
+To build/test the library, first install dependencies:
 
 ```bash
 npm install --save-dev eosio-push-guarantee node-fetch eosjs
