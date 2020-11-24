@@ -35,7 +35,7 @@ const { arrayToHex } = require("eosjs/dist/eosjs-serialize");
         // readRetries: 0, // amount of times to try and verify trx before retrying trx
         // pushRetries: 3, // amount of times to retry trx before failing
         // backoff: 500, // time in ms between readRetries
-        // backoffExponent: 1.1 // multiplier backoff time for backoff (if 500ms and 1.1 multiplier then 550ms backoff next time, etc)
+        // backoffExponent: 1.5 // multiplier backoff time for backoff (if 500ms and 1.1 multiplier then 550ms backoff next time, etc)
 
         pushGuarantee: 'in-block', 
         readRetries: 3,
