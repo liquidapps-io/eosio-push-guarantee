@@ -9,6 +9,12 @@ To setup the library, first install dependencies:
 npm install --save-dev eosio-push-guarantee node-fetch eosjs
 ```
 
+Verbose logs
+
+```bash
+export VERBOSE_LOGS=true
+```
+
 Setup guarantee
 
 ```javascript
