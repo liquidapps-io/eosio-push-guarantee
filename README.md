@@ -78,13 +78,13 @@ const { arrayToHex } = require("eosjs/dist/eosjs-serialize");
 
         broadcast: false 
     });
-    serializedTrx = {
+    let packedTrx = {
         signatures: serializedTrx.signatures,
         compression: serializedTrx.compression || 0,
         packed_trx: arrayToHex(serializedTrx.serializedTransaction),
         packed_context_free_data: serializedTrx.serializedContextFreeData ? arrayToHex(serializedTrx.serializedContextFreeData) : null
     }
-    const result = await push_guarantee_rpc.push_transaction(serializedTrx, config);
+    const result = await push_guarantee_rpc.push_transaction(packedTrx, config);
     console.log(await result.json());
 })().catch((e) => { console.log(e); });
 ```
