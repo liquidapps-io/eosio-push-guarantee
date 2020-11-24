@@ -1,7 +1,7 @@
 // /*
 
 import { PushGuarantee } from "../src/index.js";
-const { Api, JsonRpc, RpcError } = require('eosjs');
+const { Api, JsonRpc } = require('eosjs');
 const { JsSignatureProvider } = require('eosjs/dist/eosjs-jssig');      // development only
 const fetch = require('node-fetch');                                    // node only; not needed in browsers
 const { TextEncoder, TextDecoder } = require('util');                   // node only; native TextEncoder/Decoder
@@ -35,7 +35,7 @@ const { arrayToHex } = require("eosjs/dist/eosjs-serialize");
         // readRetries: 100,
     }
     // api.rpc = rpc;
-    const push_guarantee_rpc = new PushGuarantee(rpc, RpcError, fetch, config);
+    const push_guarantee_rpc = new PushGuarantee(rpc, fetch, config);
     const account = 'dappservices';
     const actor = 'vacctstst123';
     const action = 'transfer';

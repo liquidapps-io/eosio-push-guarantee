@@ -9,15 +9,13 @@ function delay(t, v) {
 export class PushGuarantee{
 
     rpc: any;
-    RpcError:any
     fetch: any;
     pushOptions: any;
     status: number = 0;
     producerHandoffs: string[] = [];
         
-    constructor(rpc, RpcError, fetch, pushOptions){
+    constructor(rpc, fetch, pushOptions){
         this.rpc = rpc;
-        this.RpcError = RpcError
         this.fetch = fetch
         this.pushOptions = pushOptions;
     }
