@@ -1,7 +1,7 @@
-EOSIO Push Guarantee Library | https://www.npmjs.com/package/eosio-push-guarantee
+EOSIO Push Guarantee Library
 =====================
 
-https://liquidapps.io
+npm: https://www.npmjs.com/package/eosio-push-guarantee
 
 Thank you to the dfuse team for the inspiration on this standard.
 
