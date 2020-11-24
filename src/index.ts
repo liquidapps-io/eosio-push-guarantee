@@ -21,7 +21,7 @@ export class PushGuarantee{
     }
 
     public async push_transaction(packedTrx, trxOptions){
-        if(!packedTrx) throw new Error('Transaction field is empty, must pass serialized transaction')
+        if(!packedTrx) throw new Error('Transaction field is empty, must pass packed transaction')
         const varPushRetries = trxOptions ? trxOptions.pushRetries : '';
         const variablePushRetries = this.pushOptions ? this.pushOptions.pushRetries : '';
         const pushRetries = varPushRetries || variablePushRetries || 3;
@@ -43,7 +43,7 @@ export class PushGuarantee{
             body: JSON.stringify(packedTrx),
             method: 'POST'
         });
-        if(fetchResponse.status !== 202) return fetchResponse;
+        if(fetchResponse.status !== 202) return fetchResponse; // check if 202 meaning trx success, if error or duplicate or other, return
         while(await this.checkIfFinal(execBlock, trxOptions) !== 2){
             if (process.env.VERBOSE_LOGS) console.log(`backoff: ${backoff} | readRetries ${readRetries} | pushRetries: ${pushRetries} | status: ${this.status} | producerHandoffs: ${this.producerHandoffs}`)
             await delay(backoff, undefined); 
