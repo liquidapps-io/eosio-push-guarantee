@@ -8,18 +8,18 @@ function delay(t, v) {
 
 export class PushGuarantee{
 
-    pushOptions: any;
     rpc: any;
+    RpcError:any
     fetch: any;
+    pushOptions: any;
     status: number = 0;
     producerHandoffs: string[] = [];
-    RpcError:any
         
-    constructor(rpc, RpcError, pushOptions, fetch){
-        this.pushOptions = pushOptions;
+    constructor(rpc, RpcError, fetch, pushOptions){
         this.rpc = rpc;
         this.RpcError = RpcError
         this.fetch = fetch
+        this.pushOptions = pushOptions;
     }
 
     public async push_transaction(packedTrx, trxOptions){

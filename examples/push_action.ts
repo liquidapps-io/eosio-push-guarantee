@@ -35,7 +35,7 @@ const { arrayToHex } = require("eosjs/dist/eosjs-serialize");
         // readRetries: 100,
     }
     // api.rpc = rpc;
-    const push_guarantee_rpc = new PushGuarantee(rpc, RpcError, config, fetch);
+    const push_guarantee_rpc = new PushGuarantee(rpc, RpcError, fetch, config);
     const account = 'dappservices';
     const actor = 'vacctstst123';
     const action = 'transfer';
