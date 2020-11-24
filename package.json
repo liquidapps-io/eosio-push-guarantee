@@ -8,7 +8,7 @@
     "start": "npm run build:live",
     "build": "tsc",
     "test": "node dist/examples/push_action.js",
-    "publish": "git push; npm publish"
+    "release": "git push; npm publish"
   },
   "files": [
     "dist"
