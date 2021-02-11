@@ -49,7 +49,7 @@ export class PushGuarantee{
             await delay(backoff, undefined); 
             backoff *= trxOptions.backoffExponent || this.pushOptions.backoffExponent || 1.5;    
             const microForkDetection = (prevStatus === 1 && this.status === 0); // if trx was found and is now lost, retry
-            if(!readRetries-- || microForkDetection) {
+            if (microForkDetection && !readRetries--) {
                 if (process.env.VERBOSE_LOGS && microForkDetection) {
                     if (process.env.VERBOSE_LOGS) console.log(`microfork detected, retrying trx`);
                 } else if(process.env.VERBOSE_LOGS) {
