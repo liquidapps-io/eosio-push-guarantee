@@ -1,6 +1,6 @@
 {
   "name": "eosio-push-guarantee",
-  "version": "1.3.35",
+  "version": "1.3.36",
   "description": "TS library for adding push guarantee to serialized EOSIO transactions.",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",

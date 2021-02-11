@@ -28,6 +28,13 @@ export class PushGuarantee{
         return await this._push_transaction(packedTrx, trxOptions, pushRetries);
     }
 
+    public async fetchTransaction (endpoint, body) {
+        return await this.fetch(endpoint, {
+            body,
+            method: 'POST'
+        });
+    }
+
     protected async _push_transaction(packedTrx, trxOptions, pushRetries){
         let readRetries = trxOptions.readRetries || this.pushOptions.readRetries || 10;
         let backoff = trxOptions.backoff || this.pushOptions.backoff || 500;
@@ -39,10 +46,7 @@ export class PushGuarantee{
             head_block_num: execBlock.head_block_num,
             transaction_id: crypto.createHash('sha256').update(serializedTransaction).digest('hex')
         }
-        const fetchResponse = await this.fetch(this.rpc.endpoint + '/v1/chain/send_transaction', {
-            body: JSON.stringify(packedTrx),
-            method: 'POST'
-        });
+        const fetchResponse = await this.fetchTransaction(this.rpc.endpoint + '/v1/chain/send_transaction', JSON.stringify(packedTrx));
         if(fetchResponse.status !== 202) return fetchResponse; // check if 202 meaning trx success, if error or duplicate or other, return
         while(await this.checkIfFinal(execBlock, trxOptions) !== 2){
             if (process.env.VERBOSE_LOGS) console.log(`backoff: ${backoff} | readRetries ${readRetries} | pushRetries: ${pushRetries} | status: ${this.status} | producerHandoffs: ${this.producerHandoffs}`)
@@ -57,7 +61,7 @@ export class PushGuarantee{
                 } else {
                     if (process.env.VERBOSE_LOGS) console.log(`retrying trx`);
                 }
-                return await this._push_transaction(packedTrx, trxOptions, pushRetries-1); 
+                await this.fetchTransaction(this.rpc.endpoint + '/v1/chain/send_transaction', JSON.stringify(packedTrx));
             }
             prevStatus = this.status;
         }
