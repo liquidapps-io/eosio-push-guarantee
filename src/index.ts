@@ -46,6 +46,7 @@ export class PushGuarantee{
             head_block_num: execBlock.head_block_num,
             transaction_id: crypto.createHash('sha256').update(serializedTransaction).digest('hex')
         }
+        console.log('pushing trx')
         const fetchResponse = await this.fetchTransaction(this.rpc.endpoint + '/v1/chain/send_transaction', JSON.stringify(packedTrx));
         if(fetchResponse.status !== 202) return fetchResponse; // check if 202 meaning trx success, if error or duplicate or other, return
         while(await this.checkIfFinal(execBlock, trxOptions) !== 2){
@@ -61,6 +62,7 @@ export class PushGuarantee{
                 } else {
                     if (process.env.VERBOSE_LOGS) console.log(`retrying trx`);
                 }
+                console.log('repushing trx')
                 await this.fetchTransaction(this.rpc.endpoint + '/v1/chain/send_transaction', JSON.stringify(packedTrx));
             }
             prevStatus = this.status;
