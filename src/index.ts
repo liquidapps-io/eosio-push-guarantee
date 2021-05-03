@@ -47,13 +47,15 @@ export class PushGuarantee{
             transaction_id: crypto.createHash('sha256').update(serializedTransaction).digest('hex')
         }
         const fetchResponse = await this.fetchTransaction(this.rpc.endpoint + '/v1/chain/send_transaction', JSON.stringify(packedTrx));
+        // handle duplicate trx
         if(fetchResponse.status !== 202) return fetchResponse; // check if 202 meaning trx success, if error or duplicate or other, return
+        if (process.env.VERBOSE_LOGS) console.log(fetchResponse);
         while(await this.checkIfFinal(execBlock, trxOptions) !== 2){
             if (process.env.VERBOSE_LOGS) console.log(`backoff: ${backoff} | readRetries ${readRetries} | pushRetries: ${pushRetries} | status: ${this.status} | producerHandoffs: ${this.producerHandoffs}`)
             await delay(backoff, undefined); 
-            backoff *= trxOptions.backoffExponent || this.pushOptions.backoffExponent || 1.5;    
+            backoff *= trxOptions.backoffExponent || this.pushOptions.backoffExponent || 1.5;  
             const microForkDetection = (prevStatus === 1 && this.status === 0); // if trx was found and is now lost, retry
-            if (microForkDetection && !readRetries--) {
+            if (!readRetries-- && microForkDetection) {
                 if (process.env.VERBOSE_LOGS && microForkDetection) {
                     if (process.env.VERBOSE_LOGS) console.log(`microfork detected, retrying trx`);
                 } else if(process.env.VERBOSE_LOGS) {
@@ -61,7 +63,8 @@ export class PushGuarantee{
                 } else {
                     if (process.env.VERBOSE_LOGS) console.log(`retrying trx`);
                 }
-                await this.fetchTransaction(this.rpc.endpoint + '/v1/chain/send_transaction', JSON.stringify(packedTrx));
+                const res = await this.fetchTransaction(this.rpc.endpoint + '/v1/chain/send_transaction', JSON.stringify(packedTrx));
+                if (process.env.VERBOSE_LOGS) console.log(res);
             }
             prevStatus = this.status;
         }
